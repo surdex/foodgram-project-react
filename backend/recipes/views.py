@@ -1,15 +1,17 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Exists, OuterRef, Sum
 from django.http.response import HttpResponse
-from rest_framework import mixins, permissions, status
+from django.utils.translation import gettext_lazy as _
+
+from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from .filters import IngredientFilter, RecipeFilter
 from .models import (
-    Favorite, Ingredient, IngredientsInRecipes, Recipe, Shopping, Tag,
+    Favorite, Ingredient, IngredientInRecipe, Recipe, Shopping, Tag,
 )
 from .permissions import IsOwnerOrReadOnly
 from .serializers import (
@@ -20,26 +22,14 @@ from .serializers import (
 User = get_user_model()
 
 
-class ListRetrieveViewSet(mixins.ListModelMixin,
-                          mixins.RetrieveModelMixin,
-                          GenericViewSet):
-    pass
-
-
-class ListDestroyViewSet(mixins.ListModelMixin,
-                         mixins.DestroyModelMixin,
-                         GenericViewSet):
-    pass
-
-
-class TagViewSet(ListRetrieveViewSet):
+class TagViewSet(ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = [permissions.AllowAny]
     pagination_class = None
 
 
-class IngredientViewSet(ListRetrieveViewSet):
+class IngredientViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = [permissions.AllowAny]
@@ -97,7 +87,9 @@ class RecipeViewSet(ModelViewSet):
                 user=request.user, recipe=recipe
             ).exists():
                 return Response(
-                    {'errors': 'The recipe is already in your favorite list.'},
+                    {'errors': _(
+                        'The recipe is already in your favorite list'
+                    )},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             Favorite.objects.create(
@@ -110,12 +102,12 @@ class RecipeViewSet(ModelViewSet):
                 user=request.user, recipe=recipe
             ).exists():
                 return Response(
-                    {'errors': 'The recipe isn\'t in your favorite list.'},
+                    {'errors': _('The recipe isn\'t in your favorite list')},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             Favorite.objects.get(user=request.user, recipe=recipe).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response({'errors': 'Unknown error'},
+        return Response({'errors': _('Unknown error')},
                         status=status.HTTP_400_BAD_REQUEST)
 
     @action(
@@ -129,7 +121,9 @@ class RecipeViewSet(ModelViewSet):
                 user=request.user, recipe=recipe
             ).exists():
                 return Response(
-                    {'errors': 'The recipe is already in your shopping list.'},
+                    {'errors': _(
+                        'The recipe is already in your shopping list'
+                    )},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             Shopping.objects.create(
@@ -142,18 +136,18 @@ class RecipeViewSet(ModelViewSet):
                 user=request.user, recipe=recipe
             ).exists():
                 return Response(
-                    {'errors': 'The recipe isn\'t in your shopping list.'},
+                    {'errors': _('The recipe isn\'t in your shopping list')},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             Shopping.objects.get(user=request.user, recipe=recipe).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response({'errors': 'Unknown error'},
+        return Response({'errors': _('Unknown error')},
                         status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'])
     def download_shopping_cart(self, request):
         user = request.user
-        shopping_list = IngredientsInRecipes.objects.filter(
+        shopping_list = IngredientInRecipe.objects.filter(
             recipe__shopping__user=user
         ).values(
             'ingredient__name', 'ingredient__measurement_unit'

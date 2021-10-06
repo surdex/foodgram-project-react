@@ -1,11 +1,13 @@
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
+
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 from users.models import Follow
 from users.serializers import CustomUserSerializer
 
-from .models import Ingredient, IngredientsInRecipes, Recipe, Tag
+from .models import Ingredient, IngredientInRecipe, Recipe, Tag
 
 User = get_user_model()
 
@@ -43,7 +45,7 @@ class IngredientsInRecipesSerializer(serializers.ModelSerializer):
     amount = serializers.IntegerField(min_value=1, read_only=True)
 
     class Meta:
-        model = IngredientsInRecipes
+        model = IngredientInRecipe
         fields = ['id', 'ingredient', 'measurement_unit', 'amount']
 
 
@@ -66,13 +68,13 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class IngredientsSerializer(serializers.ModelSerializer):
-    amount = serializers.IntegerField()
+    amount = serializers.IntegerField(min_value=1)
     id = serializers.SlugRelatedField(
         slug_field='id', queryset=Ingredient.objects.all()
     )
 
     class Meta:
-        model = IngredientsInRecipes
+        model = IngredientInRecipe
         fields = ['amount', 'id']
 
 
@@ -97,37 +99,61 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         serializer = RecipeSerializer(instance)
         return serializer.data
 
-    def create(self, validated_data):
-        ingredients = validated_data.pop('amounts')
-        tags = validated_data.pop('tags')
-        recipe = self.Meta.model.objects.create(**validated_data)
+    def tag_and_ingredient_add(self, recipe, tags, ingredients):
         for tag in tags:
             recipe.tags.add(tag)
         for ingredient in ingredients:
-            IngredientsInRecipes.objects.create(
+            IngredientInRecipe.objects.create(
                 recipe=recipe,
                 ingredient=ingredient['id'],
                 amount=ingredient['amount'],
             )
+
+    def create(self, validated_data):
+        ingredients = validated_data.pop('amounts')
+        tags = validated_data.pop('tags')
+        recipe = self.Meta.model.objects.create(**validated_data)
+        self.tag_and_ingredient_add(recipe, tags, ingredients)
         return recipe
 
     def update(self, instance, validated_data):
         ingredients = validated_data.pop('amounts')
         tags = validated_data.pop('tags')
-        IngredientsInRecipes.objects.filter(recipe=instance).delete()
+        IngredientInRecipe.objects.filter(recipe=instance).delete()
         instance.tags.clear()
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        for tag in tags:
-            instance.tags.add(tag)
-        for ingredient in ingredients:
-            IngredientsInRecipes.objects.create(
-                recipe=instance,
-                ingredient=ingredient['id'],
-                amount=ingredient['amount'],
-            )
+        self.tag_and_ingredient_add(instance, tags, ingredients)
         return instance
+
+    def validate_ingredients(self, value):
+        if len(value) < 1:
+            raise serializers.ValidationError(
+                _('You didn\'t add any ingredients to recipe')
+            )
+        ingredients_id = []
+        for ingredient in value:
+            ingredient_id = ingredient.get('id')
+            if ingredient_id in ingredients_id:
+                raise serializers.ValidationError(
+                    _('Ingredients must not be repeated')
+                )
+            ingredients_id.append(ingredient_id)
+
+    def validate_tags(self, value):
+        if len(value) < 1:
+            raise serializers.ValidationError(
+                _('You didn\'t add any tags to recipe')
+            )
+        tags_id = []
+        for tag in value:
+            tag_id = tag.id
+            if tag_id in tags_id:
+                raise serializers.ValidationError(
+                    _('Tags must not be repeated')
+                )
+            tags_id.append(tag_id)
 
 
 class ShotRecipeSerializer(serializers.ModelSerializer):

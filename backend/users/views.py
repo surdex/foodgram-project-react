@@ -1,26 +1,21 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.db.models import Count, Exists, OuterRef
+from django.utils.translation import gettext_lazy as _
+
 from djoser import signals
 from djoser.conf import settings
-from rest_framework import mixins, permissions, status
+from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet
 
+from .mixins import CreateListRetrieveModelViewSet
 from .models import Follow
 from .serializers import SubscribeUserSerializer
 
 User = get_user_model()
-
-
-class CreateListRetrieveModelViewSet(mixins.CreateModelMixin,
-                                     mixins.ListModelMixin,
-                                     mixins.RetrieveModelMixin,
-                                     GenericViewSet):
-    pass
 
 
 class UserViewSet(CreateListRetrieveModelViewSet):
@@ -85,7 +80,10 @@ class UserViewSet(CreateListRetrieveModelViewSet):
     def set_password(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.request.user.set_password(serializer.data['new_password'])
+        __import__('pdb').set_trace()
+        self.request.user.set_password(
+            serializer.validated_data['new_password']
+        )
         self.request.user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -95,14 +93,14 @@ class UserViewSet(CreateListRetrieveModelViewSet):
         if self.request.method == 'GET':
             if request.user == author:
                 return Response(
-                    {'errors': 'You can\'t subscribe to yourself.'},
+                    {'errors': _('You can\'t subscribe to yourself')},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             if Follow.objects.filter(
                 user=request.user, author=author
             ).exists():
                 return Response(
-                    {'errors': 'You are already subscribed to this author.'},
+                    {'errors': _('You are already subscribed to this author')},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             Follow.objects.create(
@@ -115,12 +113,12 @@ class UserViewSet(CreateListRetrieveModelViewSet):
                 user=request.user, author=author
             ).exists():
                 return Response(
-                    {'errors': 'You aren\'t subscribed to this author.'},
+                    {'errors': _('You aren\'t subscribed to this author')},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             Follow.objects.get(user=request.user, author=author).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response({'errors': 'Unknown error'},
+        return Response({'errors': _('Unknown error')},
                         status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['get'], detail=False)
