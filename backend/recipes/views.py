@@ -3,6 +3,7 @@ from django.db.models import Exists, OuterRef, Sum
 from django.http.response import HttpResponse
 from django.utils.translation import gettext_lazy as _
 
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -45,6 +46,7 @@ class RecipeViewSet(ModelViewSet):
     permission_classes = [
         permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly
     ]
+    filter_backends = [DjangoFilterBackend]
     filterset_class = RecipeFilter
 
     def get_queryset(self):

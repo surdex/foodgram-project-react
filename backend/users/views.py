@@ -80,7 +80,6 @@ class UserViewSet(CreateListRetrieveModelViewSet):
     def set_password(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        __import__('pdb').set_trace()
         self.request.user.set_password(
             serializer.validated_data['new_password']
         )

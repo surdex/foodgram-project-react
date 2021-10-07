@@ -6,7 +6,6 @@ from rest_framework import serializers
 
 from users.models import Follow
 from users.serializers import CustomUserSerializer
-
 from .models import Ingredient, IngredientInRecipe, Recipe, Tag
 
 User = get_user_model()
@@ -36,9 +35,7 @@ class AuthorRecipeSerializer(CustomUserSerializer):
 
 
 class IngredientsInRecipesSerializer(serializers.ModelSerializer):
-    ingredient = serializers.SlugRelatedField(
-        slug_field='name', read_only=True
-    )
+    name = serializers.CharField(source='ingredient.name')
     measurement_unit = serializers.CharField(
         source='ingredient.measurement_unit', read_only=True
     )
@@ -46,7 +43,7 @@ class IngredientsInRecipesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = IngredientInRecipe
-        fields = ['id', 'ingredient', 'measurement_unit', 'amount']
+        fields = ['id', 'name', 'measurement_unit', 'amount']
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -68,7 +65,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class IngredientsSerializer(serializers.ModelSerializer):
-    amount = serializers.IntegerField(min_value=1)
+    amount = serializers.IntegerField()
     id = serializers.SlugRelatedField(
         slug_field='id', queryset=Ingredient.objects.all()
     )
@@ -80,7 +77,7 @@ class IngredientsSerializer(serializers.ModelSerializer):
 
 class CreateRecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
-    cooking_time = serializers.IntegerField(min_value=1)
+    cooking_time = serializers.IntegerField()
     ingredients = IngredientsSerializer(
         label='ingredients', many=True, source='amounts'
     )
@@ -101,20 +98,20 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
 
     def tag_and_ingredient_add(self, recipe, tags, ingredients):
         for tag in tags:
-            recipe.tags.add(tag)
+            recipe.tags.add(tag.id)
         for ingredient in ingredients:
             IngredientInRecipe.objects.create(
                 recipe=recipe,
                 ingredient=ingredient['id'],
                 amount=ingredient['amount'],
             )
+        return recipe
 
     def create(self, validated_data):
         ingredients = validated_data.pop('amounts')
         tags = validated_data.pop('tags')
         recipe = self.Meta.model.objects.create(**validated_data)
-        self.tag_and_ingredient_add(recipe, tags, ingredients)
-        return recipe
+        return self.tag_and_ingredient_add(recipe, tags, ingredients)
 
     def update(self, instance, validated_data):
         ingredients = validated_data.pop('amounts')
@@ -124,8 +121,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        self.tag_and_ingredient_add(instance, tags, ingredients)
-        return instance
+        return self.tag_and_ingredient_add(instance, tags, ingredients)
 
     def validate_ingredients(self, value):
         if len(value) < 1:
@@ -135,11 +131,17 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         ingredients_id = []
         for ingredient in value:
             ingredient_id = ingredient.get('id')
+            ingredient_amount = ingredient.get('amount')
             if ingredient_id in ingredients_id:
                 raise serializers.ValidationError(
                     _('Ingredients must not be repeated')
                 )
+            if ingredient_amount < 1:
+                raise serializers.ValidationError(
+                    _('Amount of ingredients can\'t be less than 1')
+                )
             ingredients_id.append(ingredient_id)
+        return value
 
     def validate_tags(self, value):
         if len(value) < 1:
@@ -154,6 +156,14 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
                     _('Tags must not be repeated')
                 )
             tags_id.append(tag_id)
+        return value
+
+    def validate_cooking_time(self, value):
+        if value < 1:
+            raise serializers.ValidationError(
+                _('Cooking time can\'t be less than 1')
+            )
+        return value
 
 
 class ShotRecipeSerializer(serializers.ModelSerializer):
