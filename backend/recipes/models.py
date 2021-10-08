@@ -121,7 +121,7 @@ class Recipe(models.Model):
     )
 
     class Meta:
-        ordering = ['name']
+        ordering = ['-id']
         verbose_name = _('Recipe')
         verbose_name_plural = _('Recipes')
 

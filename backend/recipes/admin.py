@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import (
+from recipes.models import (
     Favorite, Ingredient, IngredientInRecipe, Recipe, Shopping, Tag,
 )
 
@@ -18,11 +18,15 @@ class IngredientAdmin(admin.ModelAdmin):
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'name', 'author')
+    list_display = ('pk', 'name', 'author', 'is_favorited')
     list_filter = ('author', 'tags')
     search_fields = ('author', 'name', 'tags')
     filter_horizontal = ('tags', 'ingredients')
     empty_value_display = '-empty-'
+
+    @admin.display(description='Число добавлений в избранное')
+    def is_favorited(self, obj):
+        return obj.favorite.count()
 
 
 class IngredientInRecipeAdmin(admin.ModelAdmin):

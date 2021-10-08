@@ -2,7 +2,6 @@ from django.contrib.auth import get_user_model
 from django.db.models import Exists, OuterRef, Sum
 from django.http.response import HttpResponse
 from django.utils.translation import gettext_lazy as _
-
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status
 from rest_framework.decorators import action
@@ -10,12 +9,12 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from .filters import IngredientFilter, RecipeFilter
-from .models import (
+from recipes.filters import IngredientFilter, RecipeFilter
+from recipes.models import (
     Favorite, Ingredient, IngredientInRecipe, Recipe, Shopping, Tag,
 )
-from .permissions import IsOwnerOrReadOnly
-from .serializers import (
+from recipes.permissions import IsOwnerOrReadOnly
+from recipes.serializers import (
     CreateRecipeSerializer, IngredientSerializer, RecipeSerializer,
     ShotRecipeSerializer, TagSerializer,
 )
@@ -61,7 +60,7 @@ class RecipeViewSet(ModelViewSet):
                     user=self.request.user.pk, recipe=OuterRef('pk')
                 )
             )
-        ).order_by('name')
+        ).order_by('-id')
         return queryset
 
     def get_permissions(self):

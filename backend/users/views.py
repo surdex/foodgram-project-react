@@ -2,7 +2,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.db.models import Count, Exists, OuterRef
 from django.utils.translation import gettext_lazy as _
-
 from djoser import signals
 from djoser.conf import settings
 from rest_framework import permissions, status
@@ -11,9 +10,9 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
-from .mixins import CreateListRetrieveModelViewSet
-from .models import Follow
-from .serializers import SubscribeUserSerializer
+from users.mixins import CreateListRetrieveModelViewSet
+from users.models import Follow
+from users.serializers import SubscribeUserSerializer
 
 User = get_user_model()
 

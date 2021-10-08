@@ -3,9 +3,7 @@ version: '3.3'
 services:
 
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: surdex/foodgram-frontend:v1.08.10
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:
@@ -19,9 +17,7 @@ services:
       - ../backend/.env
 
   backend:
-    build: 
-      context: ../backend
-      dockerfile: Dockerfile
+    image: surdex/foodgram-backend:v1.08.10
     volumes:
       - static_value:/code/static/
       - media_value:/code/media/
@@ -32,6 +28,7 @@ services:
 
   nginx:
     image: nginx:1.19.3
+    restart: always
     ports:
       - 80:80
     volumes:
@@ -41,7 +38,6 @@ services:
       - ../frontend/build:/usr/share/nginx/html/
       - ../docs/redoc.html:/usr/share/nginx/html/api/docs/redoc.html
       - ../docs/openapi-schema.yml:/usr/share/nginx/html/api/docs/openapi-schema.yml
-      
     depends_on:
       - backend
 

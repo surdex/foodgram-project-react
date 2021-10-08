@@ -1,12 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
-
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
+from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag
 from users.models import Follow
 from users.serializers import CustomUserSerializer
-from .models import Ingredient, IngredientInRecipe, Recipe, Tag
 
 User = get_user_model()
 
