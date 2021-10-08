@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
@@ -39,6 +40,9 @@ class IngredientsInRecipesSerializer(serializers.ModelSerializer):
         source='ingredient.measurement_unit', read_only=True
     )
     amount = serializers.IntegerField(min_value=1, read_only=True)
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all(), source='ingredient'
+    )
 
     class Meta:
         model = IngredientInRecipe
@@ -106,12 +110,14 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             )
         return recipe
 
+    @transaction.atomic
     def create(self, validated_data):
         ingredients = validated_data.pop('amounts')
         tags = validated_data.pop('tags')
         recipe = self.Meta.model.objects.create(**validated_data)
         return self.tag_and_ingredient_add(recipe, tags, ingredients)
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         ingredients = validated_data.pop('amounts')
         tags = validated_data.pop('tags')
