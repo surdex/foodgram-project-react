@@ -20,7 +20,7 @@ class CustomUserSerializer(UserSerializer):
         extra_kwargs = {field: {'required': True} for field in fields}
 
 
-class ShotRecipeSerializer(serializers.ModelSerializer):
+class ShortRecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ['id', 'name', 'image', 'cooking_time']
@@ -29,7 +29,7 @@ class ShotRecipeSerializer(serializers.ModelSerializer):
 
 class SubscribeUserSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.BooleanField(read_only=True, default=True)
-    recipes = ShotRecipeSerializer(many=True)
+    recipes = serializers.SerializerMethodField()
     recipes_count = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -42,3 +42,15 @@ class SubscribeUserSerializer(serializers.ModelSerializer):
             'recipes_count'
         )
         extra_kwargs = {field: {'read_only': True} for field in fields}
+
+    def get_recipes(self, obj):
+        limit = None
+        try:
+            limit = self.context['request'].query_params['recipes_limit']
+        except Exception:
+            pass
+        queryset = obj.recipes.all()[
+            :int(limit)
+        ] if limit else obj.recipes.all()
+        serializer = ShortRecipeSerializer(queryset, many=True)
+        return serializer.data

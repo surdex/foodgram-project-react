@@ -7,9 +7,9 @@ from djoser.conf import settings
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
+from recipes.pagination import CustomPagination
 from users.mixins import CreateListRetrieveModelViewSet
 from users.models import Follow
 from users.serializers import SubscribeUserSerializer
@@ -22,7 +22,7 @@ class UserViewSet(CreateListRetrieveModelViewSet):
     permission_classes = settings.PERMISSIONS.user
     token_generator = default_token_generator
     lookup_field = settings.USER_ID_FIELD
-    pagination_class = PageNumberPagination
+    pagination_class = CustomPagination
 
     def get_queryset(self):
         if self.action in ('subscriptions', 'subscribe'):
@@ -36,7 +36,7 @@ class UserViewSet(CreateListRetrieveModelViewSet):
                         user=self.request.user.pk, author=OuterRef('pk')
                     )
                 )
-            ).order_by('pk')
+            ).order_by('first_name')
         return queryset
 
     def get_permissions(self):

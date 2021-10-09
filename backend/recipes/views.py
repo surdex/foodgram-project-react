@@ -13,6 +13,7 @@ from recipes.filters import IngredientFilter, RecipeFilter
 from recipes.models import (
     Favorite, Ingredient, IngredientInRecipe, Recipe, Shopping, Tag,
 )
+from recipes.pagination import CustomPagination
 from recipes.permissions import IsOwnerOrReadOnly
 from recipes.serializers import (
     CreateRecipeSerializer, IngredientSerializer, RecipeSerializer,
@@ -38,13 +39,11 @@ class IngredientViewSet(ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(ModelViewSet):
-    http_method_names = [
-        'get', 'post', 'put', 'delete', 'head', 'options', 'trace'
-    ]
     serializer_class = RecipeSerializer
     permission_classes = [
         permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly
     ]
+    pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend]
     filterset_class = RecipeFilter
 
@@ -70,7 +69,7 @@ class RecipeViewSet(ModelViewSet):
         return super().get_permissions()
 
     def get_serializer_class(self):
-        if self.request.method in ('POST', 'PUT'):
+        if self.request.method in ('POST', 'PUT', 'PATCH'):
             return CreateRecipeSerializer
         return self.serializer_class
 

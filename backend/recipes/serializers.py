@@ -84,8 +84,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
     ingredients = IngredientsSerializer(
         label='ingredients', many=True, source='amounts'
     )
-    tags = serializers.SlugRelatedField(
-        slug_field='id',
+    tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True
     )
