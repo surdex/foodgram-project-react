@@ -3,7 +3,9 @@ version: '3.3'
 services:
 
   frontend:
-    image: surdex/foodgram-frontend:v1.08.10
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:
@@ -17,7 +19,9 @@ services:
       - ../backend/.env
 
   backend:
-    image: surdex/foodgram-backend:v1.08.10
+    build: 
+      context: ../backend
+      dockerfile: Dockerfile
     volumes:
       - static_value:/code/static/
       - media_value:/code/media/

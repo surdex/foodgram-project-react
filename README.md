@@ -16,7 +16,9 @@
 Собрать и запустить контейнер:
 
 ```
-docker-compose up -d
+cd infra/
+
+docker-compose up --build -d
 ```
 
 Выполнить миграции:
@@ -28,7 +30,7 @@ docker-compose exec backend python manage.py migrate --noinput
 Заполнить БД началными данными:
 
 ```
-python manage.py loaddata fixtures.json
+docker-compose exec backend python manage.py loaddata data/ingredients.json data/tags.json data/users.json
 ```
 
 Создать суперпользователя:
@@ -42,6 +44,8 @@ docker-compose exec backend python manage.py createsuperuser
 ```
 docker-compose exec backend python manage.py collectstatic
 ```
+
+Проект будет доступен по адресу - http://127.0.0.1/signin
 
 ## Как запустить только бэкенд:
 

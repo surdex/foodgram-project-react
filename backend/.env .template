@@ -1,0 +1,9 @@
+SECRET_KEY=django-insecure-8ys#gp#$5j064p1afd=mb+wx8@d%emnbz1n@)=mfe0(@6wdgxe
+DEBUG=True
+ALLOWED_HOSTS='localhost, 127.0.0.1, 62.84.118.100'
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=postgres
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+DB_HOST=db
+DB_PORT=5432
